@@ -122,6 +122,7 @@ typedef struct {
 #define EM_PPC		20
 #define EM_X86_64	62
 #define EM_AARCH64	183
+#define EM_RISCV	243
 
 /* version - page 4-6 */
 

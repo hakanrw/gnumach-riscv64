@@ -1,0 +1,132 @@
+# Makefile fragment for riscv64.
+
+# Copyright (C) 2023-2025 Free Software Foundation, Inc.
+
+# Permission to use, copy, modify and distribute this software and its
+# documentation is hereby granted, provided that both the copyright
+# notice and this permission notice appear in all copies of the
+# software, derivative works or modified versions, and any portions
+# thereof, and that both notices appear in supporting documentation.
+#
+# THE FREE SOFTWARE FOUNDATION ALLOWS FREE USE OF THIS SOFTWARE IN ITS
+# "AS IS" CONDITION.  THE FREE SOFTWARE FOUNDATION DISCLAIMS ANY
+# LIABILITY OF ANY KIND FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE
+# USE OF THIS SOFTWARE.
+
+#
+# Building a distribution.
+#
+EXTRA_DIST += \
+	riscv64/riscv64/mach_riscv64.srv \
+	riscv64/include/mach/riscv64
+
+if HOST_riscv64
+
+
+#
+# Source files for any riscv64 kernel.
+#
+
+libkernel_a_SOURCES += \
+	riscv64/riscv64/conf.c \
+	riscv64/riscv64/cons_conf.c \
+	riscv64/riscv64/elf.h \
+	riscv64/riscv64/model_dep.c \
+	riscv64/riscv64/model_dep.h \
+	riscv64/include/mach/sa/stdarg.h
+#	riscv64/riscv64/autoconf.c 
+#	riscv64/riscv64/autoconf.h 
+
+#
+# Further source files for any riscv64 kernel.
+#
+
+libkernel_a_SOURCES += \
+	riscv64/riscv64/cswitch.S \
+	riscv64/riscv64/locore.S \
+	riscv64/riscv64/locore.h \
+	riscv64/riscv64/percpu.c \
+	riscv64/riscv64/percpu.h \
+	riscv64/riscv64/phys.c \
+	riscv64/riscv64/pmap.c \
+	riscv64/riscv64/pmap.h \
+	riscv64/riscv64/pcb.c \
+	riscv64/riscv64/pcb.h \
+	riscv64/riscv64/spl.S \
+	riscv64/riscv64/spl.h \
+	riscv64/riscv64/irq.c \
+	riscv64/riscv64/irq.h \
+	riscv64/riscv64/trap.c \
+	riscv64/riscv64/trap.h \
+	riscv64/riscv64/loose_ends.h \
+	riscv64/riscv64/loose_ends.c \
+	riscv64/riscv64/task.h \
+	riscv64/riscv64/machine_task.c \
+	riscv64/riscv64/strings.c \
+	riscv64/riscv64/cpuboot.S
+
+#	riscv64/riscv64/debug_trace.S 
+
+libkernel_a_SOURCES += \
+	riscv64/riscv64/hpclock.c \
+	riscv64/riscv64/pic.c \
+	riscv64/riscv64/pic.h \
+	riscv64/riscv64/pic_isa.c
+
+libkernel_a_SOURCES += \
+	riscv64/riscv64/boothdr.S
+
+libkernel_a_SOURCES += \
+	riscv64/riscv64/hwcaps.c
+
+#
+# Files from the generic sources that we want.
+#
+
+libkernel_a_SOURCES += \
+	chips/busses.c \
+	chips/busses.h \
+	device/cirbuf.c
+
+
+nodist_lib_dep_tr_for_defs_a_SOURCES += \
+	riscv64/riscv64/mach_riscv64.server.defs.c
+nodist_libkernel_a_SOURCES += \
+	riscv64/riscv64/mach_riscv64.server.h \
+	riscv64/riscv64/mach_riscv64.server.c \
+	riscv64/riscv64/mach_riscv64.server.msgids
+#	i386/i386/mach_i386.server.defs
+
+nodist_libkernel_a_SOURCES += \
+	riscv64/riscv64/riscv64asm.h
+
+#
+# Installation.
+#
+
+include_mach_riscv64dir = $(includedir)/mach/riscv64
+include_mach_riscv64_HEADERS = \
+	riscv64/include/mach/riscv64/asm.h \
+	riscv64/include/mach/riscv64/boolean.h \
+	riscv64/include/mach/riscv64/exception.h \
+	riscv64/include/mach/riscv64/kern_return.h \
+	riscv64/include/mach/riscv64/mach_riscv64.defs \
+	riscv64/include/mach/riscv64/mach_riscv64_types.h \
+	riscv64/include/mach/riscv64/machine_types.defs \
+	riscv64/include/mach/riscv64/syscall_sw.h \
+	riscv64/include/mach/riscv64/thread_status.h \
+	riscv64/include/mach/riscv64/vm_param.h \
+	riscv64/include/mach/riscv64/vm_types.h
+
+#
+# Platform specific parts.
+#
+
+KERNEL_MAP_BASE=0xffffffff80000000
+
+endif # HOST_riscv64
+
+AM_CFLAGS += -D_START_MAP=$(_START_MAP) \
+        -DKERNEL_MAP_BASE=$(KERNEL_MAP_BASE)
+AM_CCASFLAGS += -D_START_MAP=$(_START_MAP) \
+        -DKERNEL_MAP_BASE=$(KERNEL_MAP_BASE)

@@ -613,3 +613,6 @@ include x86_64/Makefrag.am
 
 # aarch64.
 include aarch64/Makefrag.am
+
+# riscv64
+include riscv64/Makefrag.am

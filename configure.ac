@@ -70,6 +70,8 @@ case $host_platform:$host_cpu in
     :;;
   *:aarch64)
     ;;
+  *:riscv64)
+    ;;
   *)]
     AC_MSG_ERROR([unsupported combination of cpu type `$host_cpu' and platform
       `$host_platform'.])[;;
@@ -179,6 +181,9 @@ m4_include([x86_64/configfrag.ac])
 
 # aarch64
 m4_include([aarch64/configfrag.ac])
+
+# riscv64
+m4_include([riscv64/configfrag.ac])
 
 # General options.
 m4_include([configfrag.ac])
