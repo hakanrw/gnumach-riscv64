@@ -1,3 +1,26 @@
+# gnumach-riscv64
+
+This project is aimed at bringing the GNU Mach microkernel into the RISC-V 
+64 bit ISA. 
+
+## Current Status
+
+In its current state, this is a stub port, where almost every platform-specific
+part is stubbed out. It does not boot, run, or work. 
+
+However, it does compile and link. It is possible to incrementally implement 
+the stubbed parts and slowly bring Mach to life.
+
+## Required Tools
+
+- autotools
+- make
+- riscv64-none-gnu binutils
+- riscv64-none-gnu-gcc (available GCC 16+)
+- riscv64-none-gnu-mig
+
+# Original GNU Mach notice
+
 This is GNU Mach, the GNU distribution of the Mach microkernel,
 <http://www.gnu.org/software/hurd/microkernel/mach/gnumach.html>.  Welcome.
 
