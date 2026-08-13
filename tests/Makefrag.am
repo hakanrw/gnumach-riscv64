@@ -37,6 +37,7 @@ EXTRA_DIST += \
 	tests/grub.cfg.single.template \
 	tests/grub.cfg.xen.template \
 	tests/run-qemu.sh.template \
+	tests/include/string.h \
 	tests/include/syscalls.h \
 	tests/include/testlib.h \
 	tests/include/device/cons.h \
