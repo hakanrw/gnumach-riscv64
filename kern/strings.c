@@ -32,6 +32,7 @@
  */
 
 #include <string.h>
+#include <stddef.h>
 
 #ifdef	strcpy
 #undef strcmp
