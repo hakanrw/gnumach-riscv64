@@ -1,0 +1,46 @@
+OUTPUT_FORMAT("elf64-littleriscv", "elf64-littleriscv", "elf64-littleriscv")
+OUTPUT_ARCH(riscv)
+ENTRY(_start)
+
+SECTIONS
+{
+  /* Physical load address (LMA) & early execution address (VMA) */
+  . = _START_MAP;
+
+  .text : AT(_START_MAP)
+  {
+    /* Force boot code to offset 0 */
+    *(.boot.text)
+    *(.text.start)
+    *(.text .stub .text.* .gnu.linkonce.t.*)
+  }
+
+  .rodata : ALIGN(0x1000)
+  {
+    *(.rodata .rodata.* .gnu.linkonce.r.*)
+  }
+
+  .data : ALIGN(0x1000)
+  {
+    *(.data .data.* .gnu.linkonce.d.*)
+    *(.sdata .sdata.* .gnu.linkonce.s.*)
+  }
+
+  .bss : ALIGN(0x1000)
+  {
+    *(.sbss .sbss.* .gnu.linkonce.sb.*)
+    *(.bss .bss.* .gnu.linkonce.b.*)
+    *(COMMON)
+  }
+
+  . = ALIGN(0x1000);
+  _end = .;
+  PROVIDE (end = .);
+
+  /DISCARD/ :
+  {
+    *(.note.GNU-stack)
+    *(.gnu_debuglink)
+    *(.gnu.lto_*)
+  }
+}
