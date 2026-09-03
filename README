@@ -1,23 +1,29 @@
 # gnumach-riscv64
 
-This project is aimed at bringing the GNU Mach microkernel into the RISC-V 
-64 bit ISA. 
+This project is aimed at bringing the GNU Mach microkernel to the RISC-V
+64-bit ISA.
 
 ## Current Status
 
-In its current state, this is a stub port, where almost every platform-specific
-part is stubbed out. It does not boot, run, or work. 
+The port cross-compiles and links into a kernel image.  On QEMU's `virt`
+machine, OpenSBI can load the image with its `-kernel` option and enter `_start`
+at `0x80200000`.
 
-However, it does compile and link. It is possible to incrementally implement 
-the stubbed parts and slowly bring Mach to life.
+A polled NS16550 UART is working, enabling `printf` output during early
+bootstrap.
+
+The kernel currently parks after printing the banner.  Memory discovery,
+virtual memory, traps, interrupts, timers, and the remaining machine startup
+path are still stubbed out.
 
 ## Required Tools
 
 - autotools
 - make
-- riscv64-none-gnu binutils
-- riscv64-none-gnu-gcc (available GCC 16+)
-- riscv64-none-gnu-mig
+- riscv64-unknown-gnu binutils
+- riscv64-unknown-gnu-gcc (GCC 17 tested)
+- riscv64-unknown-gnu-mig
+- qemu-system-riscv64
 
 # Original GNU Mach notice
 
