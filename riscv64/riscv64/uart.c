@@ -29,11 +29,11 @@
  * Allwinner D1 (C906): UART0 at 0x02500000
  * Same NS16550-compatible IP, also 8-bit stride.
  *
- * We detect which one to use at probe time via the DTB,
- * but for now default to QEMU virt address.
+ * Select the base address at build time with UART_BASE.  It defaults
+ * to the QEMU virt address.
  */
 
-static volatile uint8_t *uart_base = (volatile uint8_t *)UART_BASE_QEMU_VIRT;
+static volatile uint8_t *uart_base = (volatile uint8_t *)UART_BASE;
 
 /* NS16550 register offsets (byte offsets for 8-bit access) */
 #define UART_RBR	0	/* Receive Buffer Register (read) */
@@ -59,9 +59,6 @@ static volatile uint8_t *uart_base = (volatile uint8_t *)UART_BASE_QEMU_VIRT;
 /* FCR bits */
 #define FCR_FIFO_EN	0x01		/* Enable FIFO */
 #define FCR_FIFO_CLR	0x06		/* Clear TX and RX FIFOs */
-
-/* IER bits */
-#define IER_ERDAI	0x01		/* Enable Received Data Available */
 
 static inline uint8_t
 uart_read(int reg)
@@ -93,9 +90,6 @@ uart_init(void)
 
 	/* No modem control */
 	uart_write(UART_MCR, 0);
-
-	/* Enable received data interrupt */
-	uart_write(UART_IER, IER_ERDAI);
 }
 
 /*
@@ -156,8 +150,6 @@ uart_cninit(struct consdev *cp)
 int
 uart_cnputc(dev_t dev, int c)
 {
-	if (c == '\n')
-		uart_putc('\r');
 	uart_putc(c);
 	return 0;
 }
@@ -192,7 +184,5 @@ struct consdev uart_consdev = {
 void
 uart_early_putc(char c)
 {
-	if (c == '\n')
-		uart_putc('\r');
 	uart_putc(c);
 }
