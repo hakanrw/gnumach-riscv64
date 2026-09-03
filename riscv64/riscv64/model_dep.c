@@ -57,6 +57,7 @@
 
 #include <riscv64/model_dep.h>
 #include <riscv64/db_interface.h>
+#include <riscv64/uart.h>
 
 #ifdef	MACH_XEN
 #include <xen/console.h>
@@ -183,6 +184,10 @@ c_boot_entry(unsigned long hart_id, phys_addr_t dtb)
 {
 	boot_hart_id = hart_id;
 	boot_dtb = dtb;
+
+	uart_init();
+	romputc = uart_early_putc;
+	printf("%s\n", version);
 }
 
 #include <mach/vm_prot.h>
