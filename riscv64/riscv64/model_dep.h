@@ -62,9 +62,11 @@ extern void halt_all_cpus (boolean_t reboot) __attribute__ ((noreturn));
 extern void machine_relax (void);
 
 /*
- * C boot entrypoint - called by boot_entry in boothdr.S.
+ * C boot entrypoint - called by _start in boothdr.S.
  */
-extern void c_boot_entry(vm_offset_t bi);
+extern unsigned long boot_hart_id;
+extern phys_addr_t boot_dtb;
+extern void c_boot_entry(unsigned long hart_id, phys_addr_t dtb);
 
 /*
  * Interrupt stack.

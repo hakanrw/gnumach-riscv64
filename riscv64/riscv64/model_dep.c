@@ -172,17 +172,17 @@ register_boot_data(const struct multiboot_raw_info *mbi)
 #endif /* MACH_HYP */
 
 /*
- *	C boot entrypoint - called by boot_entry in boothdr.S.
- *	Running in flat mode, but without paging yet.
+ *	C boot entrypoint - called by _start in boothdr.S.
+ *	Running in physical address space, without paging.
  */
-void c_boot_entry(vm_offset_t bi)
-{
-	/* TODO: implement */
-	/*
-	 * Start the system.
-	 */
-	setup_main();
+unsigned long boot_hart_id;
+phys_addr_t boot_dtb;
 
+void
+c_boot_entry(unsigned long hart_id, phys_addr_t dtb)
+{
+	boot_hart_id = hart_id;
+	boot_dtb = dtb;
 }
 
 #include <mach/vm_prot.h>

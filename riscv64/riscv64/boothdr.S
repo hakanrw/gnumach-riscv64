@@ -20,59 +20,50 @@
 
 #include <riscv64/riscv64asm.h>
 #include <riscv64/riscv64/proc_reg.h>
-	/*
-	 * This section will be put first into .boot.  See also	x86_64/ldscript.
-	 */
+
+	/* This section is placed first in the kernel image.  */
 	.section .boot.text,"ax"
-	/* We should never be entered this way.	 */
-	.globl	boot_start
-boot_start:
-
-	j	boot_entry
-
-	/* MultiBoot header - see multiboot.h.	*/
-#define	MULTIBOOT_MAGIC		0x1BADB002
-#define MULTIBOOT_FLAGS		0x00000003
-boot_hdr:
-	.long	MULTIBOOT_MAGIC
-	.long	MULTIBOOT_FLAGS
-	/*
-	* The next item here is the checksum.
-	* XX this works OK until we need at least the 30th bit.
-	*/
-	.long	- (MULTIBOOT_MAGIC+MULTIBOOT_FLAGS)
-
-	.global _start
+	.globl	_start
+	.type	_start, @function
+	.p2align 2
 _start:
-boot_entry:
-	/* TODO: implement */
-.kernel_map:
-#if KERNEL_MAP_BASE >= (1U << 39)
-	/* TODO: implement */
-#else
-	/* TODO: implement */
-#endif
+	/* Enter C with paging and supervisor interrupts disabled.  */
+	csrw	satp, zero
+	sfence.vma
+	csrci	sstatus, SSTATUS_SIE
+	csrw	sie, zero
 
-switch64:
-	/* TODO: implement (is this necessary in riscv64?) */
-boot_entry64:
+	/* Initialize the global pointer without linker relaxation.  */
+	.option push
+	.option norelax
+1:	auipc	gp, %pcrel_hi(_edata)
+	addi	gp, gp, %pcrel_lo(1b)
+	.option pop
 
-iplt_cont:
+	/* Clear uninitialized data before using the bootstrap stack.  */
+	la	t0, _edata
+	la	t1, _end
+2:	bgeu	t0, t1, 3f
+	sd	zero, 0(t0)
+	addi	t0, t0, 8
+	j	2b
 
-iplt_next:
-iplt_done:
+	/* Establish an ABI-aligned stack and a clean frame chain.  */
+3:	la	sp, boot_stack_top
+	andi	sp, sp, -16
+	mv	fp, zero
 
-	/* Jump into C code.  */
+	/* OpenSBI leaves the hart ID in a0 and the DTB address in a1.  */
 	call	EXT(c_boot_entry)
 
-	/* not reached */
+	/* c_boot_entry is not expected to return once bootstrap advances.  */
+4:	wfi
+	j	4b
+	.size	_start, . - _start
 
-p4table:	.space 4096
-p3table:	.space 4096
-p2table:	.space 4096
-p2table1:	.space 4096
-p2table2:	.space 4096
-p2table3:	.space 4096
-p3ktable:	.space 4096
-p2ktable1:	 .space 4096
-p2ktable2:	 .space 4096
+	/* Temporary stack used until the VM system allocates kernel stacks.  */
+	.section .bss.boot,"aw",@nobits
+	.p2align 4
+boot_stack:
+	.skip	0x4000
+boot_stack_top:

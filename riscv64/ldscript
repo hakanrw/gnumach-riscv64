@@ -23,10 +23,15 @@ SECTIONS
   .data : ALIGN(0x1000)
   {
     *(.data .data.* .gnu.linkonce.d.*)
+    *(.got .got.*)
+    *(.got.plt)
     *(.sdata .sdata.* .gnu.linkonce.s.*)
+    . = ALIGN(8);
+    _edata = .;
+    PROVIDE_HIDDEN (__global_pointer$ = _edata);
   }
 
-  .bss : ALIGN(0x1000)
+  .bss (NOLOAD) : ALIGN(0x1000)
   {
     *(.sbss .sbss.* .gnu.linkonce.sb.*)
     *(.bss .bss.* .gnu.linkonce.b.*)

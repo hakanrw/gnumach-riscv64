@@ -29,5 +29,6 @@
 #ifndef	_RISCV64_PROC_REG_H_
 #define	_RISCV64_PROC_REG_H_
 
-/* TODO: */
+#define SSTATUS_SIE	(1 << 1)
+
 #endif	/* _RISCV64_PROC_REG_H_ */
