@@ -31,6 +31,8 @@ libkernel_a_SOURCES += \
 	riscv64/riscv64/conf.c \
 	riscv64/riscv64/cons_conf.c \
 	riscv64/riscv64/elf.h \
+	riscv64/riscv64/uart.c \
+	riscv64/riscv64/uart.h \
 	riscv64/riscv64/model_dep.c \
 	riscv64/riscv64/model_dep.h \
 	riscv64/include/mach/sa/stdarg.h
