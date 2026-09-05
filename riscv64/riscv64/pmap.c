@@ -165,6 +165,36 @@ boolean_t	pmap_initialized = FALSE;
 vm_offset_t kernel_virtual_start;
 vm_offset_t kernel_virtual_end;
 
+/* Largest usable RAM region reported by the device tree.  */
+static phys_addr_t phys_mem_start;
+static vm_size_t phys_mem_size;
+
+void
+pmap_discover_physical_memory(struct dtb_node *node)
+{
+	struct dtb_prop prop;
+	vm_size_t off = 0;
+
+	prop = dtb_node_find_prop(node, "reg");
+	assert(!DTB_IS_SENTINEL(prop));
+
+	while (off < prop.length) {
+		phys_addr_t start;
+		vm_size_t size;
+
+		start = dtb_prop_read_cells(&prop, node->address_cells, &off);
+		size = dtb_prop_read_cells(&prop, node->size_cells, &off);
+		if (size > phys_mem_size) {
+			phys_mem_start = start;
+			phys_mem_size = size;
+		}
+	}
+
+	assert(phys_mem_size != 0);
+	vm_page_load(VM_PAGE_SEG_DMA, phys_mem_start,
+	             phys_mem_start + phys_mem_size);
+}
+
 /*
  *	Index into pv_head table, its lock bits, and the modify/reference
  *	bits.

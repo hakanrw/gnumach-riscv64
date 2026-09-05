@@ -55,6 +55,7 @@
 #include <kern/smp.h>
 #include <sys/types.h>
 #include <vm/vm_page.h>
+#include <vm/pmap.h>
 
 #include <riscv64/model_dep.h>
 #include <riscv64/db_interface.h>
@@ -203,8 +204,9 @@ early_dtb_walk(void)
 		}
 		dtb_for_each_prop(node, prop) {
 			if (!strcmp(prop.name, "device_type")
-			    && !strcmp(prop.data, "memory"))
-			{} /* TODO: discover physical memory */
+			    && !strcmp(prop.data, "memory")) {
+				pmap_discover_physical_memory(&node);
+			}
 		}
 		early_dtb_walk_visit_node(&node, NULL);
 	}

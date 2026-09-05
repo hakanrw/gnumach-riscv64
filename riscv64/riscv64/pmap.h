@@ -473,6 +473,9 @@ extern pt_entry_t *kernel_page_dir;
 extern vm_offset_t kernel_virtual_start;
 extern vm_offset_t kernel_virtual_end;
 
+struct dtb_node;
+extern void pmap_discover_physical_memory(struct dtb_node *node);
+
 /*
  *  Bootstrap the system enough to run with virtual memory.
  *  Allocate the kernel page directory and page tables,
