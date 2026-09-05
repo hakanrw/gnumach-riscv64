@@ -26,6 +26,8 @@
 #ifndef _RISCV64_MODEL_DEP_H_
 #define _RISCV64_MODEL_DEP_H_
 
+#include <device/dtb.h>
+
 #include <mach/std_types.h>
 #include <mach/vm_prot.h>
 
@@ -65,8 +67,7 @@ extern void machine_relax (void);
  * C boot entrypoint - called by _start in boothdr.S.
  */
 extern unsigned long boot_hart_id;
-extern phys_addr_t boot_dtb;
-extern void c_boot_entry(unsigned long hart_id, phys_addr_t dtb);
+extern void c_boot_entry(unsigned long hart_id, dtb_t dtb);
 
 /*
  * Interrupt stack.

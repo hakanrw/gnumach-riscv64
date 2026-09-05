@@ -88,7 +88,9 @@ libkernel_a_SOURCES += \
 libkernel_a_SOURCES += \
 	chips/busses.c \
 	chips/busses.h \
-	device/cirbuf.c
+	device/cirbuf.c \
+	device/dtb.c \
+	device/dtb.h
 
 
 nodist_lib_dep_tr_for_defs_a_SOURCES += \

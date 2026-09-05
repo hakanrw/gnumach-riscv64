@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <device/cons.h>
+#include <device/dtb.h>
 
 #include <mach/vm_param.h>
 #include <mach/vm_prot.h>
@@ -172,22 +173,65 @@ register_boot_data(const struct multiboot_raw_info *mbi)
 
 #endif /* MACH_HYP */
 
+static void
+early_dtb_walk_visit_node(dtb_node_t node,
+			  dtb_ranges_map_t map)
+{
+	struct dtb_node child;
+	struct dtb_ranges_map nmap;
+	boolean_t have_nmap = FALSE;
+
+	/* TODO: implement */
+}
+
+static void
+early_dtb_walk(void)
+{
+	struct dtb_node node;
+	struct dtb_prop prop;
+
+	node = dtb_root_node();
+
+	/*
+	 *	Look at top-level nodes and their props.
+	 */
+	dtb_for_each_child (node, node) {
+		if (!strcmp(node.name, "chosen") || !strncmp(node.name, "chosen@", 7)) {
+			prop = dtb_node_find_prop(&node, "bootargs");
+			if (!DTB_IS_SENTINEL(prop))
+				kernel_cmdline = (const char *) prop.data;
+			continue;
+		}
+		dtb_for_each_prop(node, prop) {
+			if (!strcmp(prop.name, "device_type")
+			    && !strcmp(prop.data, "memory"))
+			{} /* TODO: discover physical memory */
+		}
+		early_dtb_walk_visit_node(&node, NULL);
+	}
+}
+
 /*
  *	C boot entrypoint - called by _start in boothdr.S.
  *	Running in physical address space, without paging.
  */
 unsigned long boot_hart_id;
-phys_addr_t boot_dtb;
 
 void
-c_boot_entry(unsigned long hart_id, phys_addr_t dtb)
+c_boot_entry(unsigned long hart_id, dtb_t dtb)
 {
+	kern_return_t kr;
+
 	boot_hart_id = hart_id;
-	boot_dtb = dtb;
+
+	kr = dtb_load(dtb);
+	assert(kr == KERN_SUCCESS);
 
 	uart_init();
 	romputc = uart_early_putc;
 	printf("%s\n", version);
+
+	early_dtb_walk();
 }
 
 #include <mach/vm_prot.h>
