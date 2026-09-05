@@ -174,6 +174,60 @@ register_boot_data(const struct multiboot_raw_info *mbi)
 #endif /* MACH_HYP */
 
 static void
+padprint(unsigned int depth)
+{
+	for (unsigned int i = 0; i < depth; i++)
+		printf("\t");
+}
+
+static boolean_t
+maybeascii(dtb_prop_t prop)
+{
+	if (prop->length < 1)
+		return FALSE;
+
+	const char *data = (const char *)prop->data;
+
+	for (vm_size_t i = 0; i < prop->length - 1; i++)
+		if (data[i] < ' ' || data[i] > '~')
+			return FALSE;
+
+	return data[prop->length - 1] == '\0';
+}
+
+static void
+early_dtb_print_node(dtb_node_t node,
+		     unsigned int depth)
+{
+	struct dtb_prop prop;
+	struct dtb_node child;
+
+	padprint(depth); printf("%s {\n", node->name);
+
+	dtb_for_each_prop (*node, prop) {
+
+		padprint(depth + 1); printf("%s = ", prop.name);
+		if (maybeascii(&prop)) {
+			printf("\"%s\";\n", (const char*)prop.data);
+		}
+		else {
+			const char *data = (const char *)prop.data;
+			printf("<");
+			for (vm_size_t i = 0; i < prop.length; i++)
+				printf("%02x ", data[i]);
+			printf(">;");
+			printf("\n");
+		}
+	}
+
+	dtb_for_each_child (*node, child) {
+		early_dtb_print_node(&child, depth + 1);
+	}
+
+	padprint(depth); printf("};\n");
+}
+
+static void
 early_dtb_walk_visit_node(dtb_node_t node,
 			  dtb_ranges_map_t map)
 {
@@ -181,7 +235,7 @@ early_dtb_walk_visit_node(dtb_node_t node,
 	struct dtb_ranges_map nmap;
 	boolean_t have_nmap = FALSE;
 
-	/* TODO: implement */
+	early_dtb_print_node(node, 0);
 }
 
 static void
