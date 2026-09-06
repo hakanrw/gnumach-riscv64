@@ -23,6 +23,7 @@
 #include <string.h>
 #include <util/atoi.h>
 
+#include <kern/debug.h>
 #include <kern/printf.h>
 #include <mach/std_types.h>
 
@@ -43,10 +44,12 @@ struct bus_driver ns16550_driver = {
 static int rcline = 0;
 static struct bus_device *ns16550_cndev;
 
-/* NS16550 register offsets (byte offsets for 8-bit access) */
+/* NS16550 register indices. */
 #define NS16550_RBR	0	/* Receive Buffer Register (read) */
 #define NS16550_THR	0	/* Transmit Holding Register (write) */
+#define NS16550_DLL	0	/* Divisor Latch LSB (DLAB = 1) */
 #define NS16550_IER	1	/* Interrupt Enable Register */
+#define NS16550_DLM	1	/* Divisor Latch MSB (DLAB = 1) */
 #define NS16550_FCR	2	/* FIFO Control Register (write) */
 #define NS16550_IIR	2	/* Interrupt Identification Register (read) */
 #define NS16550_LCR	3	/* Line Control Register */
@@ -76,16 +79,120 @@ static struct bus_device *ns16550_cndev;
 #define IIR_FIFO_BROKEN	0x80		/* FIFO enabled but broken (unusable 16550) */
 #define IIR_FIFO_16550A	0xC0		/* FIFOs fully enabled and working (16550A) */
 
-static inline uint8_t
-ns16550_reg_read(vm_offset_t base, int reg)
+static inline vm_offset_t
+ns16550_reg_address(const struct bus_device *dev, unsigned int reg)
 {
-	return ((volatile uint8_t*)base)[reg];
+	const struct ns16550_config *config = NS16550_CONF(dev->sysdep);
+
+	return dev->address + ((vm_offset_t)reg << config->reg_shift);
 }
 
-static inline void
-ns16550_reg_write(vm_offset_t base, int reg, uint8_t val)
+static uint8_t
+ns16550_reg_read(const struct bus_device *dev, unsigned int reg)
 {
-	((volatile uint8_t*)base)[reg] = val;
+	const struct ns16550_config *config = NS16550_CONF(dev->sysdep);
+	vm_offset_t address = ns16550_reg_address(dev, reg);
+
+	switch (config->reg_io_width) {
+	case 1:
+		return *(volatile uint8_t *)address;
+	case 2:
+		return *(volatile uint16_t *)address & 0xff;
+	case 4:
+		return *(volatile uint32_t *)address & 0xff;
+	default:
+		panic("nsuart%d: unsupported register width %u",
+		      dev->unit, config->reg_io_width);
+	}
+
+	return 0;
+}
+
+static void
+ns16550_reg_write(const struct bus_device *dev, unsigned int reg, uint8_t val)
+{
+	const struct ns16550_config *config = NS16550_CONF(dev->sysdep);
+	vm_offset_t address = ns16550_reg_address(dev, reg);
+
+	switch (config->reg_io_width) {
+	case 1:
+		*(volatile uint8_t *)address = val;
+		break;
+	case 2:
+		*(volatile uint16_t *)address = val;
+		break;
+	case 4:
+		*(volatile uint32_t *)address = val;
+		break;
+	default:
+		panic("nsuart%d: unsupported register width %u",
+		      dev->unit, config->reg_io_width);
+	}
+}
+
+static int
+ns16550_config_valid(const struct bus_device *dev, int noisy)
+{
+	const struct ns16550_config *config = NS16550_CONF(dev->sysdep);
+	uint64_t denominator, divisor;
+
+	if (config == NULL) {
+		if (noisy)
+			printf("nsuart%d: no device configuration\n", dev->unit);
+		return 0;
+	}
+
+	if (config->reg_shift > sizeof(vm_offset_t) * 8 - 3) {
+		if (noisy)
+			printf("nsuart%d: invalid register shift %u\n",
+			       dev->unit, config->reg_shift);
+		return 0;
+	}
+
+	if (config->reg_io_width != 1 && config->reg_io_width != 2
+	    && config->reg_io_width != 4) {
+		if (noisy)
+			printf("nsuart%d: unsupported register width %u\n",
+			       dev->unit, config->reg_io_width);
+		return 0;
+	}
+
+	if (((vm_offset_t)1 << config->reg_shift)
+	    < config->reg_io_width) {
+		if (noisy)
+			printf("nsuart%d: register width exceeds spacing\n",
+			       dev->unit);
+		return 0;
+	}
+
+	if (dev->address & (config->reg_io_width - 1)) {
+		if (noisy)
+			printf("nsuart%d: unaligned register address %zx\n",
+			       dev->unit, dev->address);
+		return 0;
+	}
+
+	if ((config->clock_frequency == 0) != (config->baud_rate == 0)) {
+		if (noisy)
+			printf("nsuart%d: incomplete baud rate configuration\n",
+			       dev->unit);
+		return 0;
+	}
+
+	if (config->baud_rate != 0) {
+		denominator = 16ULL * config->baud_rate;
+		divisor = (config->clock_frequency + denominator / 2)
+			  / denominator;
+		if (divisor == 0 || divisor > 0xffff) {
+			if (noisy)
+				printf("nsuart%d: invalid baud rate %u for clock %lu\n",
+				       dev->unit, config->baud_rate,
+				       config->clock_frequency);
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 static int
@@ -107,20 +214,23 @@ ns16550_probe_general(struct bus_device *dev, int noisy)
 		return 0;
 	}
 
-	saved = ns16550_reg_read(dev->address, NS16550_SCR);
+	if (!ns16550_config_valid(dev, noisy))
+		return 0;
 
-	ns16550_reg_write(dev->address, NS16550_SCR, 0x55);
-	if (ns16550_reg_read(dev->address, NS16550_SCR) != 0x55)
+	saved = ns16550_reg_read(dev, NS16550_SCR);
+
+	ns16550_reg_write(dev, NS16550_SCR, 0x55);
+	if (ns16550_reg_read(dev, NS16550_SCR) != 0x55)
 		goto out;
 
-	ns16550_reg_write(dev->address, NS16550_SCR, 0xaa);
-	if (ns16550_reg_read(dev->address, NS16550_SCR) != 0xaa)
+	ns16550_reg_write(dev, NS16550_SCR, 0xaa);
+	if (ns16550_reg_read(dev, NS16550_SCR) != 0xaa)
 		goto out;
 
 	present = 1;
 
 out:
-	ns16550_reg_write(dev->address, NS16550_SCR, saved);
+	ns16550_reg_write(dev, NS16550_SCR, saved);
 
 	if (!present && noisy)
 		printf("nsuart%d: probe failed\n", unit);
@@ -139,6 +249,9 @@ ns16550_probe(vm_offset_t port, struct bus_ctlr *dev)
 void
 ns16550_attach(struct bus_device *dev)
 {
+	const struct ns16550_config *config = NS16550_CONF(dev->sysdep);
+	uint64_t denominator, divisor;
+	uint8_t lcr;
 	u_char	unit = dev->unit;
 
 	if (unit >= NNS16550) {
@@ -146,18 +259,30 @@ ns16550_attach(struct bus_device *dev)
 		return;
 	}
 
-	/* Disable interrupts */
-	ns16550_reg_write(dev->address, NS16550_IER, 0);
+	/* Select the ordinary register bank and disable interrupts. */
+	lcr = ns16550_reg_read(dev, NS16550_LCR);
+	ns16550_reg_write(dev, NS16550_LCR, lcr & ~LCR_DLAB);
+	ns16550_reg_write(dev, NS16550_IER, 0);
+
+	if (config->baud_rate != 0) {
+		denominator = 16ULL * config->baud_rate;
+		divisor = (config->clock_frequency + denominator / 2)
+			  / denominator;
+
+		ns16550_reg_write(dev, NS16550_LCR, LCR_8N1 | LCR_DLAB);
+		ns16550_reg_write(dev, NS16550_DLL, divisor & 0xff);
+		ns16550_reg_write(dev, NS16550_DLM, divisor >> 8);
+	}
 
 	/* Enable FIFO, clear TX and RX */
-	ns16550_reg_write(dev->address, NS16550_FCR,
+	ns16550_reg_write(dev, NS16550_FCR,
 			  FCR_FIFO_EN | FCR_FIFO_CLR);
 
 	/* 8N1, no DLAB */
-	ns16550_reg_write(dev->address, NS16550_LCR, LCR_8N1);
+	ns16550_reg_write(dev, NS16550_LCR, LCR_8N1);
 
 	/* No modem control */
-	ns16550_reg_write(dev->address, NS16550_MCR, 0);
+	ns16550_reg_write(dev, NS16550_MCR, 0);
 }
 
 void
@@ -323,25 +448,26 @@ ns16550_cninit(struct consdev *cp)
 int
 ns16550_cnputc(dev_t dev, int c)
 {
-	vm_offset_t addr = ns16550_info[minor(dev)]->address;
+	struct bus_device *device = ns16550_info[minor(dev)];
 
 	/* Wait for transmitter holding register to be empty */
-	while (!(ns16550_reg_read(addr, NS16550_LSR) & LSR_THRE))
+	while (!(ns16550_reg_read(device, NS16550_LSR) & LSR_THRE))
 		;
 
 	/* Send the character */
-	ns16550_reg_write(addr, NS16550_THR, (uint8_t)c);
+	ns16550_reg_write(device, NS16550_THR, (uint8_t)c);
 	return 0;
 }
 
 int
 ns16550_cngetc(dev_t dev, int wait)
 {
-	vm_offset_t addr = ns16550_info[minor(dev)]->address;
+	struct bus_device *device = ns16550_info[minor(dev)];
 
 	for (;;) {
-		if (ns16550_reg_read(addr, NS16550_LSR) & LSR_DR)
-			return (int)(ns16550_reg_read(addr, NS16550_RBR) & 0xff);
+		if (ns16550_reg_read(device, NS16550_LSR) & LSR_DR)
+			return (int)(ns16550_reg_read(device, NS16550_RBR)
+				     & 0xff);
 		if (!wait)
 			return -1;
 		/* Spin - no interrupts early in boot */

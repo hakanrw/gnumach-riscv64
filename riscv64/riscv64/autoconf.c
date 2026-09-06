@@ -47,6 +47,10 @@ extern struct bus_driver ns16550_driver;
 #define NS16550_BASE	NS16550_BASE_QEMU_VIRT
 #endif
 
+static const struct ns16550_config nsuart0_config = {
+ /* reg_shift    reg_io_width  clock_freq   baud_rate  irq */
+            0,              1,    3686400,     115200,  10
+};
 #endif /* NNS16550 */
 
 struct	bus_ctlr	bus_master_init[] = {
@@ -65,7 +69,7 @@ struct	bus_device	bus_device_init[] = {
 
 #if NNS16550 > 0
   {&ns16550_driver, "nsuart", 0, ns16550_intr, NS16550_BASE, 0, NS16550_BASE,
-     '?',    0,   -1,    -1,    0,   0,        0,         0, 0},
+     '?',    0,   -1,    -1,    0,   0,        0,         (vm_offset_t)&nsuart0_config, 0},
 #endif /* NNS16550 */
   {0}
 };

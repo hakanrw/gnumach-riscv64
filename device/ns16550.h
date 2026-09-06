@@ -12,6 +12,16 @@
 #include <device/conf.h>
 #include <device/cons.h>
 
+#define NS16550_CONF(conf) ((const struct ns16550_config *)conf)
+
+struct ns16550_config {
+	unsigned int	reg_shift;
+	unsigned int	reg_io_width;
+	unsigned long	clock_frequency;
+	unsigned int	baud_rate;
+	unsigned int	irq;
+};
+
 extern int  ns16550_probe(vm_offset_t port, struct bus_ctlr *dev);
 extern void ns16550_attach(struct bus_device *dev);
 extern void ns16550_intr(int unit);
