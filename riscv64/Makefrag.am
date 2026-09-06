@@ -31,19 +31,17 @@ libkernel_a_SOURCES += \
 	riscv64/riscv64/conf.c \
 	riscv64/riscv64/cons_conf.c \
 	riscv64/riscv64/elf.h \
-	riscv64/riscv64/uart.c \
-	riscv64/riscv64/uart.h \
 	riscv64/riscv64/model_dep.c \
 	riscv64/riscv64/model_dep.h \
 	riscv64/include/mach/sa/stdarg.h
-#	riscv64/riscv64/autoconf.c 
-#	riscv64/riscv64/autoconf.h 
 
 #
 # Further source files for any riscv64 kernel.
 #
 
 libkernel_a_SOURCES += \
+	riscv64/riscv64/autoconf.h \
+	riscv64/riscv64/autoconf.c \
 	riscv64/riscv64/cswitch.S \
 	riscv64/riscv64/locore.S \
 	riscv64/riscv64/locore.h \
@@ -90,7 +88,9 @@ libkernel_a_SOURCES += \
 	chips/busses.h \
 	device/cirbuf.c \
 	device/dtb.c \
-	device/dtb.h
+	device/dtb.h \
+	device/ns16550.c \
+	device/ns16550.h
 
 
 nodist_lib_dep_tr_for_defs_a_SOURCES += \

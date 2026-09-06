@@ -29,21 +29,24 @@
  */
 #include <sys/types.h>
 #include <device/cons.h>
-#include <riscv64/uart.h>
 
-/* Forward declarations for UART console functions */
-extern int  uart_cnprobe(struct consdev *cp);
-extern int  uart_cninit(struct consdev *cp);
-extern int  uart_cngetc(dev_t dev, int wait);
-extern int  uart_cnputc(dev_t dev, int c);
+#ifndef MACH_HYP
+#if NNS16550 > 0
+#include <device/ns16550.h>
+#endif /* NNS16550 */
+#endif /* MACH_HYP */
 
 /*
  * The rest of the consdev fields are filled in by the respective
  * cnprobe routine.
  */
 struct	consdev constab[] = {
-	{ "uart", uart_cnprobe, uart_cninit,
-	  uart_cngetc, uart_cnputc,
+#ifndef MACH_HYP
+#if NNS16550 > 0
+	{ "nsuart", ns16550_cnprobe, ns16550_cninit,
+	  ns16550_cngetc, ns16550_cnputc,
 	  0, CN_REMOTE },
+#endif /* NNS16550 */
+#endif /* MACH_HYP */
 	{0}
 };

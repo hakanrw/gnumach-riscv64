@@ -58,7 +58,6 @@
 
 #include <riscv64/model_dep.h>
 #include <riscv64/db_interface.h>
-#include <riscv64/uart.h>
 
 #ifdef	MACH_XEN
 #include <xen/console.h>
@@ -227,8 +226,7 @@ c_boot_entry(unsigned long hart_id, dtb_t dtb)
 	kr = dtb_load(dtb);
 	assert(kr == KERN_SUCCESS);
 
-	uart_init();
-	romputc = uart_early_putc;
+	cninit();
 	printf("%s\n", version);
 
 	early_dtb_walk();

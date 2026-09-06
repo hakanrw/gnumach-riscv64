@@ -32,6 +32,9 @@ AC_DEFINE_UNQUOTED([NCOM], [$ncom], [NCOM])
 # i386/bogus/lpr.h
 AC_DEFINE_UNQUOTED([NLPR], [$nlpr], [NLPR])
 
+# device/ns16550.h
+AC_DEFINE_UNQUOTED([NNS16550], [$nns16550], [NNS16550])
+
 [if [ x"$enable_pae" = xyes ]; then]
   AC_DEFINE([PAE], [1], [PAE support])
   AM_CONDITIONAL([enable_pae], [true])

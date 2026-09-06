@@ -27,6 +27,7 @@ dnl USE OF THIS SOFTWARE.
     AC_SUBST([_START_MAP])
 
     [
+    nns16550=1
     # Does the architecture provide machine-specific interfaces?
     mach_machine_routines=1
     ;;

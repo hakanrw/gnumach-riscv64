@@ -34,6 +34,13 @@
 
 #define	timename		"time"
 
+#ifndef	MACH_HYP
+#if	NNS16550 > 0
+#include <device/ns16550.h>
+#define	ns16550_name		"nsuart"
+#endif	/* NNS16550 > 0 */
+#endif	/* MACH_HYP */
+
 /* TODO: implement */
 /*
  * List of devices - console must be at slot 0
@@ -59,6 +66,14 @@ struct dev_ops	dev_name_list[] =
 	  nodev_async_in,	nulldev_reset,	nulldev_portdeath,	0,
 	  nodev_info },
 
+#ifndef	MACH_HYP
+#if	NNS16550 > 0
+	{ ns16550_name,	ns16550_open,	ns16550_close,	ns16550_read,
+	  ns16550_write,	ns16550_getstat,	ns16550_setstat,	nomap,
+	  nodev_async_in,	nulldev_reset,	ns16550_portdeath,	0,
+	  nodev_info },
+#endif	/* NNS16550 > 0 */
+#endif	/* MACH_HYP */
 	/* TODO: implement */
 };
 int	dev_name_count = sizeof(dev_name_list)/sizeof(dev_name_list[0]);
