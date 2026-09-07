@@ -169,19 +169,70 @@ vm_offset_t kernel_virtual_end;
 static phys_addr_t phys_mem_start;
 static vm_size_t phys_mem_size;
 
+extern const void __text_start;
+extern const void _end;
+
+static vm_offset_t heap_start;
+static vm_offset_t heap_end;
+
+static void
+pmap_exclude_from_bootstrap_heap(phys_addr_t start, phys_addr_t end)
+{
+	phys_addr_t lower_end, upper_start;
+	vm_size_t lower_size, upper_size;
+
+	if (end <= heap_start || start >= heap_end)
+		return;
+
+	lower_end = trunc_page(start);
+	upper_start = round_page(end);
+	lower_size = lower_end > heap_start ? lower_end - heap_start : 0;
+	upper_size = heap_end > upper_start ? heap_end - upper_start : 0;
+
+	if (lower_size >= upper_size)
+		heap_end = lower_end;
+	else
+		heap_start = upper_start;
+
+	if (heap_start >= heap_end)
+		panic("No physical memory available for bootstrap");
+}
+
+vm_offset_t
+pmap_grab_page(void)
+{
+	vm_offset_t page;
+
+	if (heap_end - heap_start < PAGE_SIZE)
+		panic("Not enough memory to initialize Mach");
+
+	page = heap_start;
+	heap_start += PAGE_SIZE;
+	return page;
+}
+
 void
 pmap_discover_physical_memory(struct dtb_node *node)
 {
 	struct dtb_prop prop;
+	dtb_t dtb;
+	phys_addr_t start;
+	phys_addr_t kernel_start, kernel_end;
+	phys_addr_t dtb_start, dtb_end;
+	vm_size_t size, dtb_size;
 	vm_size_t off = 0;
 
 	prop = dtb_node_find_prop(node, "reg");
 	assert(!DTB_IS_SENTINEL(prop));
 
+	/*
+	 *	TODO: We currently only consider a single largest
+	 *	region of memory.  It appears to be a limitation
+	 *	of the vm_page module, it can only handle a single
+	 *	region at the given "seg_index", of which there are
+	 *	only 4?
+	 */
 	while (off < prop.length) {
-		phys_addr_t start;
-		vm_size_t size;
-
 		start = dtb_prop_read_cells(&prop, node->address_cells, &off);
 		size = dtb_prop_read_cells(&prop, node->size_cells, &off);
 		if (size > phys_mem_size) {
@@ -191,8 +242,20 @@ pmap_discover_physical_memory(struct dtb_node *node)
 	}
 
 	assert(phys_mem_size != 0);
+	/* TODO: is VM_PAGE_SEG_DMA appropriate here? */
 	vm_page_load(VM_PAGE_SEG_DMA, phys_mem_start,
 	             phys_mem_start + phys_mem_size);
+
+	kernel_start = (phys_addr_t) &__text_start;
+	kernel_end = (phys_addr_t) &_end;
+	dtb_get_location(&dtb, &dtb_size);
+	dtb_start = (phys_addr_t) dtb;
+	dtb_end = dtb_start + dtb_size;
+
+	heap_start = round_page(phys_mem_start);
+	heap_end = trunc_page(phys_mem_start + phys_mem_size);
+	pmap_exclude_from_bootstrap_heap(kernel_start, kernel_end);
+	pmap_exclude_from_bootstrap_heap(dtb_start, dtb_end);
 }
 
 /*

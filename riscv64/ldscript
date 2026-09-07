@@ -9,6 +9,7 @@ SECTIONS
 
   .text : AT(_START_MAP)
   {
+    __text_start = .;
     /* Force boot code to offset 0 */
     *(.boot.text)
     *(.text.start)

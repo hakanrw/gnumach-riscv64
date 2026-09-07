@@ -271,15 +271,3 @@ init_alloc_aligned(vm_size_t size, vm_offset_t *addrp)
 	/* TODO: implement */
 	return FALSE;
 }
-
-/* Grab a physical page:
-   the standard memory allocation mechanism
-   during system initialization.  */
-vm_offset_t
-pmap_grab_page(void)
-{
-	vm_offset_t addr;
-	if (!init_alloc_aligned(PAGE_SIZE, &addr))
-		panic("Not enough memory to initialize Mach");
-	return addr;
-}
