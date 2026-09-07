@@ -29,6 +29,34 @@
 
 typedef phys_addr_t pt_entry_t;
 
+#define PT_ENTRY_NULL	((pt_entry_t *) 0)
+
+#define RISCV_PT_LEVELS		3
+#define RISCV_VPN_BITS		9
+#define RISCV_PTE_SIZE		8
+#define RISCV_PT_ENTRIES	512
+
+#define RISCV_VPN2_SHIFT	30
+#define RISCV_VPN1_SHIFT	21
+#define RISCV_VPN0_SHIFT	12
+#define RISCV_VPN_MASK		0x1ff
+
+#define lin2vpn2(a)		(((a) >> RISCV_VPN2_SHIFT) & RISCV_VPN_MASK)
+#define lin2vpn1(a)		(((a) >> RISCV_VPN1_SHIFT) & RISCV_VPN_MASK)
+#define lin2vpn0(a)		(((a) >> RISCV_VPN0_SHIFT) & RISCV_VPN_MASK)
+
+#define RISCV_PTE_V		(1UL << 0)
+#define RISCV_PTE_R		(1UL << 1)
+#define RISCV_PTE_W		(1UL << 2)
+#define RISCV_PTE_X		(1UL << 3)
+#define RISCV_PTE_U		(1UL << 4)
+#define RISCV_PTE_G		(1UL << 5)
+#define RISCV_PTE_A		(1UL << 6)
+#define RISCV_PTE_D		(1UL << 7)
+
+#define RISCV_PTE_IS_LEAF(pte) \
+	((pte) & (RISCV_PTE_R | RISCV_PTE_W | RISCV_PTE_X))
+
 struct pmap {
 	pt_entry_t		*root_table;
 	int			ref_count;
