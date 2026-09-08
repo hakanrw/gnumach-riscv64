@@ -29,12 +29,12 @@
 #define PAGE_SHIFT		RISCV64_PGSHIFT
 
 /*
- *	TODO: (Remains from Aarch64): Exporting VM_MAX_ADDRESS basically locks in
- *	VM_AARCH64_T0SZ being 48.  Consider dropping it from this
+ *	TODO: Exporting VM_MAX_ADDRESS basically locks in the Sv39 user
+ *	address-space size.  Consider dropping it from this
  *	public header once userland no longer depends on it.
  */
 #define VM_MIN_ADDRESS		(0ULL)
-#define VM_MAX_ADDRESS		(0x1000000000000ULL)
+#define VM_MAX_ADDRESS		(0x4000000000ULL)
 
 
 #endif	/* _MACH_RISCV64_VM_PARAM_H_ */

@@ -105,6 +105,7 @@ AC_PROG_RANLIB
 AC_CHECK_TOOL([AR], [ar])
 AC_CHECK_TOOL([LD], [ld])
 AC_CHECK_TOOL([NM], [nm])
+AC_CHECK_TOOL([OBJCOPY], [objcopy])
 
 AC_CHECK_TOOL([MIG], [mig], [no])
 AC_ARG_VAR([MIG], [Path to the mig tool])

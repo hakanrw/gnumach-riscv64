@@ -128,16 +128,16 @@ include_mach_riscv64_HEADERS = \
 
 KERNEL_MAP_BASE=0xffffffff80000000
 
-AM_CFLAGS += -D_START_MAP=$(_START_MAP) \
-        -DKERNEL_MAP_BASE=$(KERNEL_MAP_BASE) \
+AM_CFLAGS += -DKERNEL_MAP_BASE=$(KERNEL_MAP_BASE) \
         -mcmodel=medany
 
-AM_CCASFLAGS += -D_START_MAP=$(_START_MAP) \
-        -DKERNEL_MAP_BASE=$(KERNEL_MAP_BASE) \
+AM_CCASFLAGS += -DKERNEL_MAP_BASE=$(KERNEL_MAP_BASE) \
         -mcmodel=medany
 
 gnumach_LINKFLAGS += \
-        --defsym _START_MAP=$(_START_MAP) \
-        -T '$(srcdir)'/riscv64/ldscript
+        --defsym KERNEL_MAP_BASE=$(KERNEL_MAP_BASE) \
+        -T '$(srcdir)'/riscv64/ldscript \
+        $(gnumach_LDADD) -o gnumach.elf \
+        && $(OBJCOPY) -O binary gnumach.elf gnumach && :
 
 endif # HOST_riscv64

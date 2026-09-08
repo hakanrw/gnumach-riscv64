@@ -4,10 +4,9 @@ ENTRY(_start)
 
 SECTIONS
 {
-  /* Physical load address (LMA) & early execution address (VMA) */
-  . = _START_MAP;
+  . = KERNEL_MAP_BASE;
 
-  .text : AT(_START_MAP)
+  .text : AT(ADDR(.text) - KERNEL_MAP_BASE)
   {
     __text_start = .;
     /* Force boot code to offset 0 */
@@ -16,12 +15,12 @@ SECTIONS
     *(.text .stub .text.* .gnu.linkonce.t.*)
   }
 
-  .rodata : ALIGN(0x1000)
+  .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - KERNEL_MAP_BASE)
   {
     *(.rodata .rodata.* .gnu.linkonce.r.*)
   }
 
-  .data : ALIGN(0x1000)
+  .data ALIGN(0x1000) : AT(ADDR(.data) - KERNEL_MAP_BASE)
   {
     *(.data .data.* .gnu.linkonce.d.*)
     *(.got .got.*)
@@ -32,7 +31,7 @@ SECTIONS
     PROVIDE_HIDDEN (__global_pointer$ = _edata);
   }
 
-  .bss (NOLOAD) : ALIGN(0x1000)
+  .bss ALIGN(0x1000) (NOLOAD) : AT(ADDR(.bss) - KERNEL_MAP_BASE)
   {
     *(.sbss .sbss.* .gnu.linkonce.sb.*)
     *(.bss .bss.* .gnu.linkonce.b.*)

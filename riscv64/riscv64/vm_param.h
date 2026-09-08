@@ -35,10 +35,9 @@
 #define VM_MIN_USER_ADDRESS VM_MIN_ADDRESS
 #define VM_MAX_USER_ADDRESS VM_MAX_ADDRESS
 
-/* The kernel address space is usually 1GB, usually starting at virtual address 0.  */
-/* This can be changed freely to separate kernel addresses from user addresses
- * for better trace support in kdb; the _START symbol has to be offset by the
- * same amount. */
+#define DIRECT_MAP_VA_BASE	(0xffffffc000000000UL)
+
+/* The virtual address at which the kernel image is linked.  */
 #define VM_MIN_KERNEL_ADDRESS	KERNEL_MAP_BASE
 
 /* PV kernels can be loaded directly to the target virtual address */
@@ -80,18 +79,16 @@
 						/* interrupt stack size */
 
 /*
- *	Physical memory is direct-mapped to virtual memory
- *	starting at virtual address VM_MIN_KERNEL_ADDRESS.
+ *	Physical memory is direct-mapped to virtual memory by preserving
+ *	the physical address as an offset from DIRECT_MAP_VA_BASE.
  */
-#define phystokv(a)	((vm_offset_t)(a) + VM_MIN_KERNEL_ADDRESS)
+#define phystokv(a)	((vm_offset_t)(a) + DIRECT_MAP_VA_BASE)
 /*
- * This can not be used with virtual mappings, but can be used during bootstrap
+ * This can only be used with addresses in the physical direct map.
  */
-#define _kvtophys(a)	((vm_offset_t)(a) - VM_MIN_KERNEL_ADDRESS)
+#define _kvtophys(a)	((vm_offset_t)(a) - DIRECT_MAP_VA_BASE)
 
-/*
- *	Kernel virtual memory is actually at 0xc0000000 in linear addresses.
- */
+/* Kernel virtual and linear addresses currently coincide.  */
 #define kvtolin(a)	((vm_offset_t)(a) - VM_MIN_KERNEL_ADDRESS + LINEAR_MIN_KERNEL_ADDRESS)
 #define lintokv(a)	((vm_offset_t)(a) - LINEAR_MIN_KERNEL_ADDRESS + VM_MIN_KERNEL_ADDRESS)
 

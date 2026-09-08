@@ -99,6 +99,5 @@ copy_from_phys(
 phys_addr_t
 kvtophys(vm_offset_t addr)
 {
-	(void) addr;
-	panic("riscv64: kvtophys not implemented");
+	return _kvtophys(addr);
 }

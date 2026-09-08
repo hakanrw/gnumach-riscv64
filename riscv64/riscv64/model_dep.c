@@ -104,7 +104,7 @@ struct multiboot_raw_info boot_info;
 #endif	/* MACH_XEN */
 
 /* Command line supplied to kernel.  */
-char *kernel_cmdline = "";
+char *kernel_cmdline;
 
 extern char	version[];
 
@@ -228,10 +228,10 @@ c_boot_entry(unsigned long hart_id, dtb_t dtb)
 	kr = dtb_load(dtb);
 	assert(kr == KERN_SUCCESS);
 
-	cninit();
 	printf("%s\n", version);
 
 	early_dtb_walk();
+	pmap_bootstrap();
 }
 
 #include <mach/vm_prot.h>
