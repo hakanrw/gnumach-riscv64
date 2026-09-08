@@ -17,9 +17,8 @@
  */
 
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
-
-#include <kern/debug.h>
 
 #define ARCH_STRING_MEMCPY
 #define ARCH_STRING_MEMMOVE
@@ -30,11 +29,14 @@
 void *
 memcpy(void *dest, const void *src, size_t n)
 {
-    void *orig_dest;
+	unsigned char *d = dest;
+	const unsigned char *s = src;
+	void *orig_dest = dest;
 
-    panic("TODO: not implemented");
+	while (n-- != 0)
+		*d++ = *s++;
 
-    return orig_dest;
+	return orig_dest;
 }
 #endif /* ARCH_STRING_MEMCPY */
 
@@ -42,13 +44,21 @@ memcpy(void *dest, const void *src, size_t n)
 void *
 memmove(void *dest, const void *src, size_t n)
 {
-    void *orig_dest;
+	unsigned char *d = dest;
+	const unsigned char *s = src;
+	void *orig_dest = dest;
 
-    orig_dest = dest;
+	if ((uintptr_t) d < (uintptr_t) s) {
+		while (n-- != 0)
+			*d++ = *s++;
+	} else if ((uintptr_t) d > (uintptr_t) s) {
+		d += n;
+		s += n;
+		while (n-- != 0)
+			*--d = *--s;
+	}
 
-    panic("TODO: not implemented");
-
-    return orig_dest;
+	return orig_dest;
 }
 #endif /* ARCH_STRING_MEMMOVE */
 
@@ -56,11 +66,13 @@ memmove(void *dest, const void *src, size_t n)
 void *
 memset(void *s, int c, size_t n)
 {
-    void *orig_s;
+	unsigned char *p = s;
+	void *orig_s = s;
 
-    panic("TODO: not implemented");
+	while (n-- != 0)
+		*p++ = (unsigned char) c;
 
-    return orig_s;
+	return orig_s;
 }
 #endif /* ARCH_STRING_MEMSET */
 
@@ -68,13 +80,16 @@ memset(void *s, int c, size_t n)
 int
 memcmp(const void *s1, const void *s2, size_t n)
 {
-    unsigned char c1, c2;
+	const unsigned char *p1 = s1;
+	const unsigned char *p2 = s2;
 
-    if (n == 0)
-        return 0;
+	while (n-- != 0) {
+		if (*p1 != *p2)
+			return (int) *p1 - (int) *p2;
+		p1++;
+		p2++;
+	}
 
-    panic("TODO: not implemented");
-
-    return (int)c1 - (int)c2;
+	return 0;
 }
 #endif /* ARCH_STRING_MEMCMP */
