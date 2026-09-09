@@ -106,6 +106,26 @@ struct multiboot_raw_info boot_info;
 /* Command line supplied to kernel.  */
 char *kernel_cmdline = "";
 
+static const char gnu_mach_banner[] =
+    "\r\n"
+    "         #######              |    ____ _   _ _   _   __  __            _     \r\n"
+    "         #     #@             |   / ___| \\ | | | | | |  \\/  | __ _  ___| |__  \r\n"
+    "      ####     #######        |  | |  _|  \\| | | | | | |\\/| |/ _` |/ __| '_ \\ \r\n"
+    "    ##   #######     ###      |  | |_| | |\\  | |_| | | |  | | (_| | (__| | | |\r\n"
+    "  ####      #            ##   |   \\____|_| \\_|\\___/  |_|  |_|\\__,_|\\___|_| |_|\r\n"
+    " #######     @    ####### #   |  ==============================================\r\n"
+    " #     #     #   ##     # #   |           GNU Mach / riscv64 port\r\n"
+    " #     #      #####     # #   |\r\n"
+    " #######          ####### #   |\r\n"
+    "  @###               #   @#   |\r\n"
+    "    #    #######     #  ##    |\r\n"
+    "    #    #     # %######      |\r\n"
+    "    ##   #     #   ##         |\r\n"
+    "     #@  #######  @#          |\r\n"
+    "      ###       ###           |\r\n"
+    "         #######              |\r\n"
+    "\r\n";
+
 extern char	version[];
 
 /* Realmode relocated jmp */
@@ -230,6 +250,7 @@ c_boot_entry(unsigned long hart_id, dtb_t dtb)
 
 	cninit();
 	printf("%s\n", version);
+	printf("%s\n", gnu_mach_banner);
 
 	early_dtb_walk();
 }

@@ -37,6 +37,7 @@ extern struct bus_driver ns16550_driver;
 /*
  * NS16550 base addresses for known RISC-V platforms.
  * QEMU virt machine: 0x10000000
+ * Milk-V Mars (JH7110): 0x10000000 (UART0)
  * Allwinner D1 (C906): 0x02500000 (UART0)
  */
 #define NS16550_BASE_QEMU_VIRT	0x10000000UL
@@ -49,7 +50,7 @@ extern struct bus_driver ns16550_driver;
 
 static const struct ns16550_config nsuart0_config = {
  /* reg_shift    reg_io_width  clock_freq   baud_rate  irq */
-            0,              1,    3686400,     115200,  10
+            2,              4,          0,          0,  32
 };
 #endif /* NNS16550 */
 
