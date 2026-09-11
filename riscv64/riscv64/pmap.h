@@ -32,6 +32,7 @@ typedef phys_addr_t pt_entry_t;
 #define PT_ENTRY_NULL	((pt_entry_t *) 0)
 
 #define RISCV_PT_LEVELS		3
+#define RISCV_PT_SHIFT		12	/* 12-bit page offset */
 #define RISCV_VPN_BITS		9
 #define RISCV_PTE_SIZE		8
 #define RISCV_PT_ENTRIES	512
@@ -53,6 +54,14 @@ typedef phys_addr_t pt_entry_t;
 #define RISCV_PTE_G		(1UL << 5)
 #define RISCV_PTE_A		(1UL << 6)
 #define RISCV_PTE_D		(1UL << 7)
+
+/* Sv39 PPN occupies bits 53:10; upper PTE bits are reserved. */
+#define RISCV_PTE_PPN_FIELD_SHIFT	10
+#define RISCV_PTE_PPN_MASK	0x003ffffffffffc00UL
+
+#define pa_to_pte(pa)		(((pt_entry_t)(pa) >> 2) & RISCV_PTE_PPN_MASK)
+#define pte_to_pa(pte)		(((pte) & RISCV_PTE_PPN_MASK) << 2)
+#define pte_increment_pa(pte)	((pte) += (1UL << RISCV_PTE_PPN_FIELD_SHIFT))
 
 #define RISCV_PTE_IS_LEAF(pte) \
 	((pte) & (RISCV_PTE_R | RISCV_PTE_W | RISCV_PTE_X))
