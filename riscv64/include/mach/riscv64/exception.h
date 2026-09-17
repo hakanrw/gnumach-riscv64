@@ -37,6 +37,7 @@
  * EXC_SOFTWARE
  */
 #define EXC_RISCV64_ECALL_U         8   /* ECALL from user mode */
+#define EXC_RISCV64_ECALL_S         9   /* ECALL from supervisor mode */
 #define EXC_RISCV64_ECALL_M         11  /* ECALL from machine mode */
 
 /*
@@ -44,6 +45,9 @@
  */
 #define EXC_RISCV64_ACCESS_FAULT    1   /* Access fault */
 #define EXC_RISCV64_LOAD_FAULT      5   /* Load access fault */
+#define EXC_RISCV64_I_PAGEFAULT     12   /* Instruction page fault */
+#define EXC_RISCV64_L_PAGEFAULT     13   /* Load page fault */
+#define EXC_RISCV64_S_PAGEFAULT     15   /* Store/AMO page fault */
 
 /*
  * EXC_BREAKPOINT

@@ -32,7 +32,6 @@ typedef phys_addr_t pt_entry_t;
 #define PT_ENTRY_NULL	((pt_entry_t *) 0)
 
 #define RISCV_PT_LEVELS		3
-#define RISCV_PT_SHIFT		12	/* 12-bit page offset */
 #define RISCV_VPN_BITS		9
 #define RISCV_PTE_SIZE		8
 #define RISCV_PT_ENTRIES	512
