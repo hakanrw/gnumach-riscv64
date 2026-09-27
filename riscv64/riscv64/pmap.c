@@ -16,9 +16,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <string.h>
 #include <device/dtb.h>
 #include <kern/debug.h>
 #include <mach/vm_prot.h>
+#include <riscv64/proc_reg.h>
 #include <vm/pmap.h>
 #include <vm/vm_page.h>
 
@@ -124,8 +126,101 @@ pmap_discover_physical_memory(struct dtb_node *node)
 void
 pmap_bootstrap(void)
 {
+	pt_entry_t *root, *l1_kernel;
+	vm_offset_t kernel_phys_start, kernel_phys_end;
+	vm_offset_t phys_mem_end, direct_map_start, va;
+	phys_addr_t pa;
+	unsigned int i, num_kernel_pages, num_giga_pages;
+
 	kernel_pmap = &kernel_pmap_store;
-	panic("riscv64: pmap_bootstrap not implemented");
+
+	/*
+	 * Paging is still disabled, so PC-relative symbol references resolve
+	 * to the kernel's physical load addresses, not its linked VMAs.
+	 */
+	kernel_phys_start = (vm_offset_t) &__text_start;
+	kernel_phys_end = (vm_offset_t) &_end;
+	if (trunc_l1(kernel_phys_start) != kernel_phys_start)
+		panic("riscv64: kernel image is not superpage aligned");
+
+	/* Cover the kernel image with a whole number of superpages.  */
+	num_kernel_pages = (unsigned int)
+		((kernel_phys_end - kernel_phys_start + RISCV_L1_SPAN - 1)
+		 >> RISCV_VPN1_SHIFT);
+
+	/*
+	 *	Allocate the Sv39 root table and the kernel L1 table from
+	 *	the bootstrap heap.  These are physical addresses; paging
+	 *	is still disabled.  TODO: once the higher-half trampoline
+	 *	lands, consumers must reach them through phystokv().
+	 */
+	root = (pt_entry_t *) pmap_grab_page();
+	memset(root, 0, PAGE_SIZE);
+	l1_kernel = (pt_entry_t *) pmap_grab_page();
+	memset(l1_kernel, 0, PAGE_SIZE);
+
+	/*
+	 *	Map the kernel image at KERNEL_MAP_BASE with 2MiB
+	 *	superpages: image offset O (physical
+	 *	kernel_phys_start + O) maps to virtual
+	 *	KERNEL_MAP_BASE + O.
+	 */
+	for (i = 0; i < num_kernel_pages; i++) {
+		va = KERNEL_MAP_BASE + (vm_offset_t) i * RISCV_L1_SPAN;
+		pa = (phys_addr_t) (kernel_phys_start
+				    + (vm_offset_t) i * RISCV_L1_SPAN);
+		l1_kernel[lin2vpn1(va)] = pa_to_pte(pa) | RISCV_PTE_LEAF_RWX;
+	}
+	root[lin2vpn2(KERNEL_MAP_BASE)] =
+		pa_to_pte((phys_addr_t) l1_kernel) | RISCV_PTE_V;
+
+	/*
+	 *	Direct-map physical RAM at DIRECT_MAP_VA_BASE so that
+	 *	phystokv()/kvtophys() hold: phystokv(pa) = pa +
+	 *	DIRECT_MAP_VA_BASE.  Use 1GiB gigapages (one root entry
+	 *	per gigabyte, e.g. root[258], root[259], ...).  The
+	 *	physical range ends at phys_mem_start + phys_mem_size,
+	 *	not at the bootstrap heap boundary.
+	 */
+	phys_mem_end = phys_mem_start + phys_mem_size;
+	direct_map_start = trunc_l2(phys_mem_start);
+	num_giga_pages = (unsigned int)
+		((phys_mem_end - direct_map_start + RISCV_L2_SPAN - 1)
+		 >> RISCV_VPN2_SHIFT);
+	for (i = 0; i < num_giga_pages; i++) {
+		pa = (phys_addr_t) (direct_map_start
+				    + (vm_offset_t) i * RISCV_L2_SPAN);
+		va = DIRECT_MAP_VA_BASE + (vm_offset_t) pa;
+		root[lin2vpn2(va)] = pa_to_pte(pa) | RISCV_PTE_LEAF_RW;
+	}
+
+	/*
+	 *	Temporary identity maps for the pre-paging window: the
+	 *	running text, bootstrap stack, DTB and early console still
+	 *	use physical addresses right after satp is enabled.  The
+	 *	kernel image is covered by its containing 1GiB region; the
+	 *	UART MMIO range used by the console is in the 0..1GiB
+	 *	region.  TODO: take the UART range from the device tree.
+	 */
+	root[lin2vpn2(kernel_phys_start)] =
+		pa_to_pte((phys_addr_t) trunc_l2(kernel_phys_start))
+		| RISCV_PTE_LEAF_RWX;
+	root[lin2vpn2(0x10000000UL)] =
+		pa_to_pte((phys_addr_t) 0) | RISCV_PTE_LEAF_RWX;
+
+	kernel_pmap->root_table = root;
+
+	/* Activate Sv39.  */
+	satp_write(satp_sv39((phys_addr_t) root));
+	sfence_vma();
+
+	/*
+	 *	The kernel map starts right after the virtual range
+	 *	covered by the kernel image mapping.
+	 */
+	kernel_virtual_start = KERNEL_MAP_BASE
+			       + (vm_offset_t) num_kernel_pages * RISCV_L1_SPAN;
+	kernel_virtual_end = VM_MAX_KERNEL_ADDRESS;
 }
 
 void

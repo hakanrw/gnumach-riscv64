@@ -41,6 +41,19 @@ typedef phys_addr_t pt_entry_t;
 #define RISCV_VPN0_SHIFT	12
 #define RISCV_VPN_MASK		0x1ff
 
+/* Span of a level-1 superpage mapping: 2MiB.  */
+#define RISCV_L1_SPAN		((vm_size_t) 1 << RISCV_VPN1_SHIFT)
+
+/* Span of a level-2 gigapage mapping: 1GiB.  */
+#define RISCV_L2_SPAN		((vm_size_t) 1 << RISCV_VPN2_SHIFT)
+
+#define round_l1(x)	(((vm_offset_t)(x) + RISCV_L1_SPAN - 1) \
+			 & ~(RISCV_L1_SPAN - 1))
+#define trunc_l1(x)	((vm_offset_t)(x) & ~(RISCV_L1_SPAN - 1))
+#define round_l2(x)	(((vm_offset_t)(x) + RISCV_L2_SPAN - 1) \
+			 & ~(RISCV_L2_SPAN - 1))
+#define trunc_l2(x)	((vm_offset_t)(x) & ~(RISCV_L2_SPAN - 1))
+
 #define lin2vpn2(a)		(((a) >> RISCV_VPN2_SHIFT) & RISCV_VPN_MASK)
 #define lin2vpn1(a)		(((a) >> RISCV_VPN1_SHIFT) & RISCV_VPN_MASK)
 #define lin2vpn0(a)		(((a) >> RISCV_VPN0_SHIFT) & RISCV_VPN_MASK)
@@ -64,6 +77,16 @@ typedef phys_addr_t pt_entry_t;
 
 #define RISCV_PTE_IS_LEAF(pte) \
 	((pte) & (RISCV_PTE_R | RISCV_PTE_W | RISCV_PTE_X))
+
+/* Common leaf flags for a read/write/execute mapping.  */
+#define RISCV_PTE_LEAF_RWX \
+	(RISCV_PTE_V | RISCV_PTE_R | RISCV_PTE_W | RISCV_PTE_X \
+	 | RISCV_PTE_A | RISCV_PTE_D)
+
+/* Leaf flags for a read/write data mapping (e.g. the direct map).  */
+#define RISCV_PTE_LEAF_RW \
+	(RISCV_PTE_V | RISCV_PTE_R | RISCV_PTE_W \
+	 | RISCV_PTE_A | RISCV_PTE_D)
 
 struct pmap {
 	pt_entry_t		*root_table;
