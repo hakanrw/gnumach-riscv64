@@ -28,7 +28,15 @@ void smp_remote_ast(unsigned logical_id);
 void smp_pmap_update(unsigned logical_id);
 int smp_startup_cpus(unsigned bsp_apic_id, phys_addr_t start_eip);
 
-#define cpu_pause() asm volatile ("pause" : : : "memory")
+/*
+ * pause instruction is a NOP on cores that do not implement it,
+ * so this is safe.  The reason we use a hand-coded value instead
+ * of the explicit assembler instruction is because the latter
+ * is only available for _Zipause targets (binutils).  That
+ * behaviour is undesirable as it unnecessarily blocks the build
+ * for a NOP operation.
+ */
+#define cpu_pause() asm volatile (".word 0x0100000f" : : : "memory")
 #define STARTUP_VECTOR_SHIFT	(20 - 8)
 
 #endif
